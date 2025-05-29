@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "248952140430",
+    "project_id": "monastors-ac7fd",
+    "storage_bucket": "monastors-ac7fd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:248952140430:android:a7f748b150114283274fdf",
+        "android_client_info": {
+          "package_name": "com.example.monastors"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXxzGH6Y3L-AQxQuWymsWiP0fgDbgLc68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
