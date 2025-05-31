@@ -18,27 +18,14 @@ class AdminScreen extends StatefulWidget {
   State<AdminScreen> createState() => _AdminScreenState();
 }
 
-class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _AdminScreenState extends State<AdminScreen> {
   DateTime? _lastBackPressed;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   Future<bool> _onWillPop() async {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Vous êtes déjà dans l’espace administrateur. Pour quitter, changez de rôle ou déconnectez-vous.'),
+        content: Text("Vous êtes déjà dans l'espace administrateur. Pour quitter, changez de rôle ou déconnectez-vous."),
         duration: Duration(seconds: 2),
       ),
     );
@@ -75,7 +62,6 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
                 if (imageFile != null) {
                   final cloudinary = CloudinaryService();
                   
-                  // Vérifier si Cloudinary est initialisé
                   if (!cloudinary.isInitialized) {
                     await cloudinary.initialize(
                       cloudName: CloudinaryConfig.cloudName,
@@ -84,6 +70,8 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
                     );
                   }
 
+                  await cloudinary.clearCache();
+
                   photoUrl = await cloudinary.uploadProfileImage(
                     imageFile: imageFile!,
                     userId: user!.uid,
@@ -91,14 +79,14 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
                   );
 
                   if (photoUrl == null) {
-                    throw Exception('Échec de l\'upload de la photo de profil');
+                    throw Exception("Échec de l'upload de la photo de profil");
                   }
                 }
 
-                await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
-                  'name': nameController.text.trim(),
-                  'photoUrl': photoUrl,
-                });
+                await context.read<AppAuthProvider>().updateProfile(
+                  name: nameController.text.trim(),
+                  photoUrl: photoUrl,
+                );
                 
                 context.read<AppAuthProvider>().setThemeMode(themeMode);
                 setState(() => loading = false);
@@ -205,34 +193,35 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: _onWillPop,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Espace Administrateur'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.account_circle),
-              tooltip: 'Profil',
-              onPressed: _showProfileDialog,
+      child: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Espace Administrateur'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.account_circle),
+                tooltip: 'Profil',
+                onPressed: _showProfileDialog,
+              ),
+            ],
+            bottom: const TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.shopping_bag), text: 'Produits'),
+                Tab(icon: Icon(Icons.receipt_long), text: 'Commandes'),
+                Tab(icon: Icon(Icons.people), text: 'Utilisateurs'),
+                Tab(icon: Icon(Icons.campaign), text: 'Annonces'),
+              ],
             ),
-          ],
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.shopping_bag), text: 'Produits'),
-              Tab(icon: Icon(Icons.receipt_long), text: 'Commandes'),
-              Tab(icon: Icon(Icons.people), text: 'Utilisateurs'),
-              Tab(icon: Icon(Icons.campaign), text: 'Annonces'),
+          ),
+          body: const TabBarView(
+            children: [
+              ProductsAdminTab(),
+              OrdersAdminTab(),
+              UsersAdminTab(),
+              AnnouncementsAdminTab(),
             ],
           ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            ProductsAdminTab(),
-            OrdersAdminTab(),
-            UsersAdminTab(),
-            AnnouncementsAdminTab(),
-          ],
         ),
       ),
     );

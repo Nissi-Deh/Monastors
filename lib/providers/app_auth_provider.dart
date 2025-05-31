@@ -34,7 +34,7 @@ class AppAuthProvider with ChangeNotifier {
       }
       notifyListeners();
     });
-  }
+  } 
 
   Future<void> signUp({
     required String email,
@@ -103,6 +103,30 @@ class AppAuthProvider with ChangeNotifier {
 
     try {
       await _authService.resetPassword(email);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile({
+    String? name,
+    String? photoUrl,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      if (_user != null) {
+        _user = await _authService.updateUserProfile(
+          userId: _user!.uid,
+          name: name,
+          photoUrl: photoUrl,
+        );
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

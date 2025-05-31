@@ -98,4 +98,31 @@ class AuthService {
       throw Exception('Erreur lors de la réinitialisation du mot de passe: $e');
     }
   }
+
+  // Mise à jour du profil utilisateur
+  Future<UserModel> updateUserProfile({
+    required String userId,
+    String? name,
+    String? photoUrl,
+  }) async {
+    try {
+      final Map<String, dynamic> updates = {};
+      if (name != null) updates['name'] = name;
+      if (photoUrl != null) updates['photoUrl'] = photoUrl;
+
+      if (updates.isEmpty) {
+        throw Exception('Aucune mise à jour à effectuer');
+      }
+
+      await _firestore.collection('users').doc(userId).update(updates);
+      
+      // Récupérer les données mises à jour
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (!doc.exists) throw Exception('Profil utilisateur non trouvé');
+
+      return UserModel.fromMap(doc.data()!);
+    } catch (e) {
+      throw Exception('Erreur lors de la mise à jour du profil: $e');
+    }
+  }
 } 
