@@ -5,9 +5,10 @@ import '../../services/order_service.dart';
 import '../../models/order_model.dart';
 import 'order_detail_screen.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/cloudinary_service.dart';
+import '../../config/cloudinary_config.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -246,18 +247,51 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     String? photoUrl = widget.user.photoUrl;
-    if (_imageFile != null) {
-      final ref = FirebaseStorage.instance.ref().child('users/${widget.user.uid}/profile.jpg');
-      await ref.putFile(_imageFile!);
-      photoUrl = await ref.getDownloadURL();
+    
+    try {
+      if (_imageFile != null) {
+        final cloudinary = CloudinaryService();
+        
+        // Vérifier si Cloudinary est initialisé
+        if (!cloudinary.isInitialized) {
+          await cloudinary.initialize(
+            cloudName: CloudinaryConfig.cloudName,
+            apiKey: CloudinaryConfig.apiKey,
+            apiSecret: CloudinaryConfig.apiSecret,
+          );
+        }
+
+        photoUrl = await cloudinary.uploadProfileImage(
+          imageFile: _imageFile!,
+          userId: widget.user.uid,
+          isAdmin: false,
+        );
+
+        if (photoUrl == null) {
+          throw Exception('Échec de l\'upload de la photo de profil');
+        }
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
+        'name': _nameController.text.trim(),
+        'photoUrl': photoUrl,
+      });
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      print('Erreur lors de la mise à jour du profil: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
-    // Mettre à jour Firestore (à adapter selon ta logique de backend)
-    await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'photoUrl': photoUrl,
-    });
-    if (mounted) Navigator.of(context).pop();
   }
 
   @override

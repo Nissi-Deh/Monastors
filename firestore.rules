@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Récupérer le rôle de l'utilisateur depuis le document user
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function isModerator() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderateur' ||
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendeur';
+    }
+
+    // Règles pour les commandes
+    match /orders/{orderId} {
+      allow read: if request.auth != null && (
+        isAdmin() ||
+        isModerator() ||
+        request.auth.uid == resource.data.userId
+      );
+      allow write: if request.auth != null && (
+        isAdmin() ||
+        // Ici, tu peux adapter pour permettre à un modérateur de modifier certaines commandes
+        request.auth.uid == resource.data.userId
+      );
+    }
+
+    // Règles pour les profils utilisateurs
+    match /users/{userId} {
+      allow read, write: if request.auth != null && (
+        isAdmin() ||
+        request.auth.uid == userId
+      );
+    }
+
+    // Ajoute ici d'autres collections si besoin (ex: produits, etc.)
+    // Exemple pour les produits (lecture publique, écriture admin uniquement) :
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+  }
+} 

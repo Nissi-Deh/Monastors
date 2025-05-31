@@ -20,10 +20,11 @@ class AppAuthProvider with ChangeNotifier {
     _authService.authStateChanges.listen((user) async {
       if (user != null) {
         try {
-          _user = await _authService.signIn(
-            email: user.email!,
-            password: '', // Le mot de passe n'est pas nécessaire car l'utilisateur est déjà authentifié
-          );
+          // Récupérer les données utilisateur depuis Firestore
+          _user = await _authService.getUserData(user.uid);
+          if (_user == null) {
+            _error = 'Profil utilisateur non trouvé';
+          }
         } catch (e) {
           _error = e.toString();
           _user = null;
@@ -31,7 +32,7 @@ class AppAuthProvider with ChangeNotifier {
       } else {
         _user = null;
       }
-      notifyListeners();
+      notifyListeners(); 
     });
   }
 
@@ -119,4 +120,4 @@ class AppAuthProvider with ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
   }
-} 
+}

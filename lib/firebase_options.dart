@@ -22,13 +22,6 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
-      case TargetPlatform.iOS:
-        return ios;
-      case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -47,12 +40,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA8mBsLNOnKAiq0m-arTQjXrxXV9F66YGQ',
+    apiKey: 'AIzaSyBXxzGH6Y3L-AQxQuWymsWiP0fgDbgLc68',
     appId: '1:248952140430:web:a534617a91ed7877274fdf',
     messagingSenderId: '248952140430',
     projectId: 'monastors-ac7fd',
     authDomain: 'monastors-ac7fd.firebaseapp.com',
-    storageBucket: 'monastors-ac7fd.firebasestorage.app',
+    storageBucket: 'monastors-ac7fd.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -60,16 +53,6 @@ class DefaultFirebaseOptions {
     appId: '1:248952140430:android:a7f748b150114283274fdf',
     messagingSenderId: '248952140430',
     projectId: 'monastors-ac7fd',
-    storageBucket: 'monastors-ac7fd.firebasestorage.app',
+    storageBucket: 'monastors-ac7fd.appspot.com',
   );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAe407pgWX_a5_ivI_B8kC82mewgr2l4Jc',
-    appId: '1:248952140430:ios:978e29833d4c3b30274fdf',
-    messagingSenderId: '248952140430',
-    projectId: 'monastors-ac7fd',
-    storageBucket: 'monastors-ac7fd.firebasestorage.app',
-    iosBundleId: 'com.example.monastors',
-  );
-
 }

@@ -2,17 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'providers/app_auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'routes.dart';
+import 'services/cloudinary_service.dart';
+import 'config/cloudinary_config.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  try {
+    // Initialiser Firebase avec un nom d'application personnalisé
+    await Firebase.initializeApp(
+      name: 'monastors',
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // La persistance de session est automatique sur mobile, rien à configurer ici
+    // Initialiser App Check en mode debug pour le développement
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
 
-  runApp(const MyApp());
+    // Initialiser Cloudinary
+    await CloudinaryService().initialize(
+      cloudName: CloudinaryConfig.cloudName,
+      apiKey: CloudinaryConfig.apiKey,
+      apiSecret: CloudinaryConfig.apiSecret,
+    );
+    print('Firebase, App Check et Cloudinary initialisés avec succès');
+
+    // La persistance de session est automatique sur mobile, rien à configurer ici
+    runApp(const MyApp());
+  } catch (e) {
+    print('Erreur lors de l\'initialisation: $e');
+    rethrow;
+  }
 }
 
 class MyApp extends StatelessWidget {

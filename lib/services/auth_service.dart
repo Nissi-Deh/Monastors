@@ -12,6 +12,19 @@ class AuthService {
   // Stream pour écouter les changements d'authentification
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // Récupérer les données utilisateur depuis Firestore
+  Future<UserModel?> getUserData(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return UserModel.fromMap(doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Erreur lors de la récupération des données utilisateur: $e');
+    }
+  }
+
   // Inscription
   Future<UserModel> signUp({
     required String email,

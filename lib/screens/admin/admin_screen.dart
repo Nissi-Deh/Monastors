@@ -7,9 +7,10 @@ import 'announcements_admin_tab.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/cloudinary_service.dart';
+import '../../config/cloudinary_config.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -70,18 +71,48 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
             Future<void> saveProfile() async {
               setState(() => loading = true);
               String? photoUrl = user?.photoUrl;
-              if (imageFile != null) {
-                final ref = FirebaseStorage.instance.ref().child('users/${user?.uid}/profile.jpg');
-                await ref.putFile(imageFile!);
-                photoUrl = await ref.getDownloadURL();
+              
+              try {
+                if (imageFile != null) {
+                  final cloudinary = CloudinaryService();
+                  
+                  // Vérifier si Cloudinary est initialisé
+                  if (!cloudinary.isInitialized) {
+                    await cloudinary.initialize(
+                      cloudName: CloudinaryConfig.cloudName,
+                      apiKey: CloudinaryConfig.apiKey,
+                      apiSecret: CloudinaryConfig.apiSecret,
+                    );
+                  }
+
+                  photoUrl = await cloudinary.uploadProfileImage(
+                    imageFile: imageFile!,
+                    userId: user!.uid,
+                    isAdmin: true,
+                  );
+
+                  if (photoUrl == null) {
+                    throw Exception('Échec de l\'upload de la photo de profil');
+                  }
+                }
+
+                await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+                  'name': nameController.text.trim(),
+                  'photoUrl': photoUrl,
+                });
+                
+                context.read<AppAuthProvider>().setThemeMode(themeMode);
+                setState(() => loading = false);
+                if (context.mounted) Navigator.of(context).pop();
+              } catch (e) {
+                print('Erreur lors de la mise à jour du profil: $e');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erreur: ${e.toString()}')),
+                  );
+                }
+                setState(() => loading = false);
               }
-              await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
-                'name': nameController.text.trim(),
-                'photoUrl': photoUrl,
-              });
-              context.read<AppAuthProvider>().setThemeMode(themeMode);
-              setState(() => loading = false);
-              if (context.mounted) Navigator.of(context).pop();
             }
 
             return AlertDialog(
