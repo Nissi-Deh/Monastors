@@ -19,7 +19,6 @@ service cloud.firestore {
       );
       allow write: if request.auth != null && (
         isAdmin() ||
-        // Ici, tu peux adapter pour permettre à un modérateur de modifier certaines commandes
         request.auth.uid == resource.data.userId
       );
     }
@@ -32,9 +31,20 @@ service cloud.firestore {
       );
     }
 
-    // Ajoute ici d'autres collections si besoin (ex: produits, etc.)
-    // Exemple pour les produits (lecture publique, écriture admin uniquement) :
+    // Règles pour les produits
     match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+
+    // Règles pour les catégories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+
+    // Règles pour les annonces
+    match /announcements/{announcementId} {
       allow read: if true;
       allow write: if request.auth != null && isAdmin();
     }

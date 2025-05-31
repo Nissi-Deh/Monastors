@@ -32,7 +32,7 @@ class AppAuthProvider with ChangeNotifier {
       } else {
         _user = null;
       }
-      notifyListeners(); 
+      notifyListeners();
     });
   }
 

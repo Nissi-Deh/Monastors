@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'products_admin_tab.dart';
 import 'orders_admin_tab.dart';
 import 'users_admin_tab.dart';
-import 'logs_admin_tab.dart';
 import 'announcements_admin_tab.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_auth_provider.dart';
@@ -26,7 +25,7 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -222,7 +221,6 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
               Tab(icon: Icon(Icons.shopping_bag), text: 'Produits'),
               Tab(icon: Icon(Icons.receipt_long), text: 'Commandes'),
               Tab(icon: Icon(Icons.people), text: 'Utilisateurs'),
-              Tab(icon: Icon(Icons.history), text: 'Logs'),
               Tab(icon: Icon(Icons.campaign), text: 'Annonces'),
             ],
           ),
@@ -233,7 +231,6 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
             ProductsAdminTab(),
             OrdersAdminTab(),
             UsersAdminTab(),
-            LogsAdminTab(),
             AnnouncementsAdminTab(),
           ],
         ),

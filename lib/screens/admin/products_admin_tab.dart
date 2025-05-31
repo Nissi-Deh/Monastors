@@ -6,20 +6,87 @@ import '../../models/category_model.dart';
 import '../../services/cloudinary_service.dart';
 import '../../config/cloudinary_config.dart';
 
-class ProductsAdminTab extends StatelessWidget {
+class ProductsAdminTab extends StatefulWidget {
   const ProductsAdminTab({super.key});
+
+  @override
+  State<ProductsAdminTab> createState() => _ProductsAdminTabState();
+}
+
+class _ProductsAdminTabState extends State<ProductsAdminTab> {
+  String? _selectedCategoryId;
+  String? _selectedSubCategoryId;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Gestion des Produits'),
+        actions: [
+          // Menu de filtrage par catégorie
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Filtrer par catégorie',
+            onSelected: (String? categoryId) {
+              setState(() {
+                _selectedCategoryId = categoryId;
+                _selectedSubCategoryId = null;
+              });
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: null,
+                  child: Text('Toutes les catégories'),
+                ),
+                ...CategoryModel.predefinedCategories.map((category) {
+                  return PopupMenuItem<String>(
+                    value: category.id,
+                    child: Text(category.name),
+                  );
+                }).toList(),
+              ];
+            },
+          ),
+          // Bouton pour réinitialiser les filtres
+          if (_selectedCategoryId != null)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              tooltip: 'Réinitialiser les filtres',
+              onPressed: () {
+                setState(() {
+                  _selectedCategoryId = null;
+                  _selectedSubCategoryId = null;
+                });
+              },
+            ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('products').orderBy('createdAt', descending: true).snapshots(),
+        stream: _buildProductsQuery(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Aucun produit'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Aucun produit'),
+                  if (_selectedCategoryId != null)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedCategoryId = null;
+                          _selectedSubCategoryId = null;
+                        });
+                      },
+                      child: const Text('Réinitialiser les filtres'),
+                    ),
+                ],
+              ),
+            );
           }
           final products = snapshot.data!.docs;
           return ListView.builder(
@@ -33,7 +100,28 @@ class ProductsAdminTab extends StatelessWidget {
                       ? Image.network(product['imageUrl'], width: 50, height: 50, fit: BoxFit.cover)
                       : const Icon(Icons.image, size: 40),
                   title: Text(product['name'] ?? ''),
-                  subtitle: Text('${product['price']} FCFA'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${product['price']} FCFA'),
+                      if (product['categoryId'] != null)
+                        FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('categories')
+                              .doc(product['categoryId'])
+                              .get(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData && snapshot.data!.exists) {
+                              return Text(
+                                'Catégorie: ${snapshot.data!['name']}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                    ],
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -72,6 +160,16 @@ class ProductsAdminTab extends StatelessWidget {
       ),
     );
   }
+
+  Stream<QuerySnapshot> _buildProductsQuery() {
+    Query query = FirebaseFirestore.instance.collection('products');
+    
+    if (_selectedCategoryId != null) {
+      query = query.where('categoryId', isEqualTo: _selectedCategoryId);
+    }
+    
+    return query.orderBy('createdAt', descending: true).snapshots();
+  }
 }
 
 class ProductFormDialog extends StatefulWidget {
@@ -106,18 +204,19 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
     
     final productCategoryId = widget.product?['categoryId'] as String?;
     if (productCategoryId != null) {
-      final isSubCategory = CategoryModel.predefinedCategories
-          .any((category) => category.subCategories?.any((sub) => sub.id == productCategoryId) ?? false);
-      
-      if (isSubCategory) {
-        for (var category in CategoryModel.predefinedCategories) {
-          if (category.subCategories?.any((sub) => sub.id == productCategoryId) ?? false) {
-            _selectedCategoryId = category.id;
-            _selectedSubCategoryId = productCategoryId;
-            break;
-          }
+      // Vérifier si c'est une sous-catégorie
+      bool isSubCategory = false;
+      for (var category in CategoryModel.predefinedCategories) {
+        if (category.subCategories?.any((sub) => sub.id == productCategoryId) ?? false) {
+          _selectedCategoryId = category.id;
+          _selectedSubCategoryId = productCategoryId;
+          isSubCategory = true;
+          break;
         }
-      } else {
+      }
+      
+      // Si ce n'est pas une sous-catégorie, c'est une catégorie principale
+      if (!isSubCategory) {
         _selectedCategoryId = productCategoryId;
       }
     }
@@ -605,7 +704,7 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                           ),
                         );
                       },
-              ),
+                ),
               const SizedBox(height: 12),
               SwitchListTile(
                 value: _isActive,
