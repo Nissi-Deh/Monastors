@@ -16,13 +16,34 @@ class ProductsAdminTab extends StatefulWidget {
 class _ProductsAdminTabState extends State<ProductsAdminTab> {
   String? _selectedCategoryId;
   String? _selectedSubCategoryId;
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Gestion des Produits'),
         actions: [
+          // Champ de recherche
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Rechercher un produit...',
+                  prefixIcon: Icon(Icons.search),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+          ),
           // Menu de filtrage par catégorie
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
@@ -88,7 +109,7 @@ class _ProductsAdminTabState extends State<ProductsAdminTab> {
               ),
             );
           }
-          final products = snapshot.data!.docs;
+          final products = snapshot.data!.docs.where(_matchesSearch).toList();
           return ListView.builder(
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -169,6 +190,16 @@ class _ProductsAdminTabState extends State<ProductsAdminTab> {
     }
     
     return query.orderBy('createdAt', descending: true).snapshots();
+  }
+
+  bool _matchesSearch(DocumentSnapshot product) {
+    if (_searchQuery.isEmpty) return true;
+    
+    final data = product.data() as Map<String, dynamic>;
+    final name = (data['name'] ?? '').toString().toLowerCase();
+    final description = (data['description'] ?? '').toString().toLowerCase();
+    
+    return name.contains(_searchQuery) || description.contains(_searchQuery);
   }
 }
 
